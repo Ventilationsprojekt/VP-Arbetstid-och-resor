@@ -333,8 +333,10 @@ footer{color:var(--muted);font-size:.8rem;padding-block:0 32px}
     <ul id="todo"></ul>
     <button type="button" class="btn" id="dl-pdf">Skapa PDF för utskrift</button>
     <button type="button" class="btn2 wide" id="dl-word">Skapa Word för justering</button>
+    <button type="button" class="btn2 wide" id="dl-mail">Skicka PDF med e-post</button>
     <p class="msg" style="margin-top:6px">PDF när allt stämmer. Word om något behöver justeras före utskrift.</p>
     <p class="msg" id="dl-msg" role="status"></p>
+    <p class="msg" id="mail-link" hidden><a id="mail-a" href="#">Öppna ett nytt mail</a> och bifoga PDF:en.</p>
     <div class="small">
       <button type="button" class="btn2" id="clear">Börja om</button>
     </div>
@@ -527,6 +529,13 @@ function model(){
     P('Överenskommelsen gäller alla uppdrag under perioden. Restid räknas per uppdrag från utgångspunkten, kortaste väg på allmän väg, och styrks med körjournalen. Resor mellan uppdrag under dagen sker på arbetstid (§ 7 p. 3–4).');}
   if(S.s==='flera'){B.push({t:'kv',pairs:[['Gäller från',v('#f-fran')],['Gäller t.o.m.',v('#f-till')],['Projektledare',v('#pl')],['Telefon',v('#pltel')]]});
     B.push({t:'tbl',w:[15,31,39,15],head:['Projektnr','Projekt','Adress','Km verkstad'],rows:state.p.filter(x=>x.namn||x.nr).map(x=>[x.nr,x.namn,x.adr,x.km])});}
+  H('7','Montörer');
+  P('Med underskriften bekräftar montören utgångspunkt, kilometer och färdsätt.');
+  const fardT={forare:'Förare, företagets bil',passagerare:'Passagerare',service:'Egen servicebil',forman:'Förmånsbil',egen:'Egen bil'};
+  const per=S.s!=='projekt';
+  const mrows=state.m.filter(x=>x.namn.trim()).map(x=>[x.namn,x.utg==='bostad'?`Bostad t.o.m. ${x.tom}`:'Verkstad',per?'Per uppdrag':x.km,fardT[x.fard],'','']);
+  mrows.push(['','','','','',''],['','','','','','']);
+  B.push({t:'tbl',w:[22,21,10,18,18,11],head:['Namn','Utgångspunkt','Km enkel','Färdsätt','Underskrift','Datum'],rows:mrows,tall:true});
   H('2','Arbetstid');
   P(S.at+' Arbetstiden börjar och slutar på arbetsplatsen.');
   if(v('#oppet'))P(`Öppettider/inpassering: ${v('#oppet')}`);
@@ -546,13 +555,6 @@ function model(){
   H('6','Traktamente och logi');
   P($('#tr-val').value==='ja'?`Aktuellt (§ 7 p. 1). Logi ordnas av: ${v('#tr-logi').toLowerCase()}. Resdagar: ${v('#tr-res')||'–'}.`:'Ej aktuellt.');
   if(v('#ovrigt')){H('7','Övrigt');v('#ovrigt').split(/\n+/).forEach(l=>{if(l.trim())P(l.trim())})}
-  H('7','Montörer');
-  P('Med underskriften bekräftar montören utgångspunkt, kilometer och färdsätt.');
-  const fardT={forare:'Förare, företagets bil',passagerare:'Passagerare',service:'Egen servicebil',forman:'Förmånsbil',egen:'Egen bil'};
-  const per=S.s!=='projekt';
-  const mrows=state.m.filter(x=>x.namn.trim()).map(x=>[x.namn,x.utg==='bostad'?`Bostad t.o.m. ${x.tom}`:'Verkstad',per?'Per uppdrag':x.km,fardT[x.fard],'','']);
-  mrows.push(['','','','','',''],['','','','','','']);
-  B.push({t:'tbl',w:[22,21,10,18,18,11],head:['Namn','Utgångspunkt','Km enkel','Färdsätt','Underskrift','Datum'],rows:mrows,tall:true});
   H('8','Ändringar');
   P('Ändras förutsättningarna (arbetstid, fordon, bemanning, parkering eller utgångspunkt) uppdateras överenskommelsen och skrivs under på nytt av de som berörs. Bostad som utgångspunkt upphör vid angivet datum, därefter gäller verkstaden.');
   B.push({t:'sign',left:'Ort och datum',right:`Underskrift projektledare (${v('#pl')})`});
@@ -654,6 +656,28 @@ async function exportFile(kind){
   }catch(e){msg.textContent='Filen kunde inte skapas. Försök igen.'}
 }
 $('#dl-pdf').onclick=()=>exportFile('pdf');
+function mailTexts(){const s=scope(),v=id=>$(id).value.trim();
+  const what=s==='projekt'?`${v('#p-namn')}${v('#p-nr')?' ('+v('#p-nr')+')':''}`:s==='period'?`perioden ${v('#t-fran')} – ${v('#t-till')}`:`flera projekt ${v('#f-fran')} – ${v('#f-till')}`;
+  return {subject:`${TITLE} – ${what}`,body:`Hej,\n\nBifogat finns överenskommelsen om arbetstid och resor för ${what}. Den ska vara undertecknad innan arbetet börjar.\n`};}
+$('#dl-mail').onclick=async()=>{
+  const msg=$('#dl-msg');$('#mail-link').hidden=true;
+  if(!(window.jspdf&&window.jspdf.jsPDF&&window.jspdf.jsPDF.API.autoTable)){msg.textContent='PDF-funktionen kunde inte laddas. Ladda om sidan och försök igen.';return}
+  const {req}=issues();if(req.length)msg.textContent='Komplettera det som saknas innan överenskommelsen skickas.';
+  let blob;try{blob=buildPdf(model())}catch(e){msg.textContent='Filen kunde inte skapas. Försök igen.';return}
+  const name=fileName('pdf'),T=mailTexts();
+  try{const file=new File([blob],name,{type:'application/pdf'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:T.subject,text:T.body});msg.textContent='Välj e-post i delningsrutan.';return}}
+  catch(e){if(e&&e.name==='AbortError'){msg.textContent='Delningen avbröts.';return}}
+  // Reserv: ladda ner PDF:en och öppna ett nytt mail
+  const mailto=`mailto:?subject=${encodeURIComponent(T.subject)}&body=${encodeURIComponent(T.body)}`;
+  $('#mail-a').href=mailto;
+  let saved=false;
+  let downloads=null;if(window.claude&&window.claude.use){try{downloads=await window.claude.use('downloads')}catch(e){}}
+  if(downloads){try{await downloads.save({filename:name,data:blob});saved=true}catch(e){}}
+  else if(!window.claude){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();saved=true}
+  msg.textContent=saved?'PDF:en är nedladdad.':'Nedladdning är inte tillgänglig här.';
+  if(saved){$('#mail-link').hidden=false;if(!window.claude)setTimeout(()=>{location.href=mailto},600);}
+};
 $('#dl-word').onclick=()=>exportFile('word');
 
 /* ---------- init ---------- */
