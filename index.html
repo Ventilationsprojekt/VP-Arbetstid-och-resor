@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Överenskommelse arbetstid och resor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: blankett i vänsterspalt med numrerade avsnitt, statuspanel till höger (staplas på mobil) */
+:root{
+  --red:#B2071B; --red-ink:#8E0616; --red-soft:#F7E6E8;
+  --grey:#BBBFC2;
+  --bg:#F5F6F6; --surface:#FFFFFF; --sunk:#EEF0F1;
+  --fg:#1E2326; --muted:#5D666B; --line:#D6DADC; --line-strong:#BBBFC2;
+  --ok:#2E7D4F; --ok-soft:#E5F2EA; --warn:#9A6200; --warn-soft:#FBF0DB;
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",Arial,Helvetica,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --red:#E04A5A; --red-ink:#F07A86; --red-soft:#3A1A1E;
+  --grey:#8E9498;
+  --bg:#15191B; --surface:#1D2226; --sunk:#252B2F;
+  --fg:#E7EAEC; --muted:#A2AAAF; --line:#323A3F; --line-strong:#4A5358;
+  --ok:#6CC08F; --ok-soft:#1C3127; --warn:#E3AE52; --warn-soft:#33291A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --red:#E04A5A; --red-ink:#F07A86; --red-soft:#3A1A1E;
+  --grey:#8E9498;
+  --bg:#15191B; --surface:#1D2226; --sunk:#252B2F;
+  --fg:#E7EAEC; --muted:#A2AAAF; --line:#323A3F; --line-strong:#4A5358;
+  --ok:#6CC08F; --ok-soft:#1C3127; --warn:#E3AE52; --warn-soft:#33291A; color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.5;margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+header.top{background:var(--surface);border-bottom:3px solid var(--red)}
+header.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-block:18px}
+.brand h1{font-family:var(--f-display);font-weight:700;font-size:1.75rem;line-height:1.1;margin:0;text-wrap:balance}
+.brand p{margin:4px 0 0;color:var(--muted);font-size:.9rem}
+.logo{height:38px;width:auto}
+
+nav.tabs{background:var(--surface);border-bottom:1px solid var(--line)}
+nav.tabs .wrap{display:flex;gap:4px;overflow-x:auto}
+nav.tabs a{font-family:var(--f-display);font-weight:600;font-size:1rem;color:var(--muted);text-decoration:none;padding:12px 14px;border-bottom:3px solid transparent;white-space:nowrap}
+nav.tabs a[aria-current="page"]{color:var(--fg);border-bottom-color:var(--red)}
+nav.tabs a:focus-visible{outline:2px solid var(--red);outline-offset:-2px}
+
+main .wrap{padding-block:24px 48px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+
+section.card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:20px;margin-bottom:16px}
+section.card > h2{display:flex;align-items:baseline;gap:10px;font-family:var(--f-display);font-size:1.25rem;font-weight:700;margin:0 0 4px}
+section.card > h2 .n{color:var(--red);font-family:var(--f-mono);font-size:.95rem;font-weight:500}
+.lead{color:var(--muted);margin:0 0 16px;font-size:.92rem;max-width:68ch}
+
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px 16px}
+.f{display:flex;flex-direction:column;gap:5px;min-width:0}
+.f.wide{grid-column:1/-1}
+label,.lbl{font-size:.78rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.req::after{content:" *";color:var(--red)}
+input,select,textarea{font:inherit;font-size:.95rem;color:var(--fg);background:var(--surface);border:1px solid var(--line-strong);border-radius:4px;padding:8px 10px;min-width:0;width:100%}
+input[type="checkbox"],input[type="radio"]{width:auto;accent-color:var(--red)}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--red);outline-offset:1px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+.scope{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:16px}
+.scope label{display:flex;gap:10px;align-items:flex-start;text-transform:none;letter-spacing:0;font-size:.95rem;color:var(--fg);font-weight:400;border:1px solid var(--line-strong);border-radius:6px;padding:12px;cursor:pointer;background:var(--surface)}
+.scope label:has(input:checked){border-color:var(--red);background:var(--red-soft)}
+.scope b{display:block;font-family:var(--f-display);font-size:1.05rem}
+.scope small{color:var(--muted);display:block;line-height:1.35}
+
+.rule{background:var(--sunk);border-left:3px solid var(--grey);padding:10px 12px;font-size:.9rem;margin:14px 0 0;max-width:80ch}
+.rule b{font-weight:600}
+.rule .ref{font-family:var(--f-mono);font-size:.78rem;color:var(--muted);white-space:nowrap}
+.note{font-size:.85rem;color:var(--muted);margin:6px 0 0}
+.hours{display:inline-flex;gap:8px;align-items:center;font-size:.88rem;padding:4px 10px;border-radius:999px;margin-top:10px}
+.hours.ok{background:var(--ok-soft);color:var(--ok)} .hours.warn{background:var(--warn-soft);color:var(--warn)}
+
+.rows{display:flex;flex-direction:column;gap:10px}
+.row{display:grid;gap:10px;align-items:end;border:1px solid var(--line);border-radius:6px;padding:12px;background:var(--sunk)}
+.row.m{grid-template-columns:minmax(140px,1.4fr) minmax(130px,1fr) minmax(110px,.8fr) 90px minmax(170px,1.2fr) auto}
+.row.v{grid-template-columns:110px minmax(140px,1fr) minmax(140px,1fr) minmax(140px,1fr) auto}
+.row.p{grid-template-columns:110px minmax(140px,1.3fr) minmax(140px,1.3fr) 90px auto}
+@media (max-width:760px){.row.m,.row.v,.row.p{grid-template-columns:1fr 1fr}.row .x{justify-self:end}}
+.row .f label{font-size:.7rem}
+.row.flag{border-color:var(--warn)}
+.flagtxt{grid-column:1/-1;color:var(--warn);font-size:.84rem;margin:0}
+
+button{font:inherit;cursor:pointer;border-radius:4px}
+.btn{background:var(--red);color:#fff;border:1px solid var(--red);padding:10px 14px;font-weight:600;width:100%}
+.btn:hover{background:var(--red-ink);border-color:var(--red-ink)}
+.btn2{background:transparent;color:var(--fg);border:1px solid var(--line-strong);padding:8px 12px;font-size:.9rem}
+.btn2.wide{width:100%;margin-top:8px;padding:10px 14px;font-weight:600}
+.btn2:hover{border-color:var(--red);color:var(--red)}
+.x{background:transparent;border:1px solid var(--line-strong);color:var(--muted);width:34px;height:36px;font-size:1.1rem;line-height:1}
+.x:hover{color:var(--red);border-color:var(--red)}
+.addrow{margin-top:10px}
+
+.checks{display:flex;flex-wrap:wrap;gap:8px 18px}
+.checks label{display:flex;gap:6px;align-items:center;text-transform:none;letter-spacing:0;font-size:.92rem;color:var(--fg);font-weight:400}
+
+aside.status{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+@media (max-width:900px){aside.status{position:static}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px}
+.panel h3{font-family:var(--f-display);font-size:1.1rem;margin:0 0 8px}
+.state{display:flex;align-items:center;gap:8px;font-weight:600;font-size:.95rem;padding:8px 10px;border-radius:4px;margin-bottom:10px}
+.state.ok{background:var(--ok-soft);color:var(--ok)} .state.warn{background:var(--warn-soft);color:var(--warn)}
+.panel ul{margin:0 0 14px;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;font-size:.86rem}
+.panel li{display:flex;gap:8px}
+.panel li::before{content:"";flex:0 0 8px;height:8px;margin-top:6px;border-radius:50%;background:var(--warn)}
+.panel li.w::before{background:var(--grey)}
+.panel .msg{font-size:.84rem;color:var(--muted);margin:8px 0 0;min-height:1.2em}
+.panel .small{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.panel .small button{flex:1}
+.panel .confirm{margin-top:8px;font-size:.85rem;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+
+/* Lathund & vägledning */
+.prose{max-width:76ch}
+.prose h2{font-family:var(--f-display);font-size:1.35rem;margin:0 0 6px}
+.prose h3{font-family:var(--f-display);font-size:1.1rem;margin:22px 0 6px;color:var(--red)}
+.prose p,.prose li{font-size:.95rem}
+.prose ul{padding-left:20px}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:6px;margin:10px 0;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.88rem;min-width:620px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--sunk);font-size:.74rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+tr:last-child td{border-bottom:0}
+td.num{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tag{display:inline-block;font-size:.7rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border-radius:3px;background:var(--red-soft);color:var(--red-ink);margin-left:4px}
+.time{font-weight:600;white-space:nowrap}
+.box{background:var(--sunk);border-left:3px solid var(--red);padding:12px 14px;margin-top:18px}
+footer{color:var(--muted);font-size:.8rem;padding-block:0 32px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <h1>Överenskommelse arbetstid och resor</h1>
+      <p>Obligatorisk vid projektstart · Plåt- och Ventilationsavtalet 2025–2027</p>
+    </div>
+    <img class="logo" alt="Ventilationsprojekt" src="data:image/png;base64,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">
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+<!-- ================= ÖVERENSKOMMELSE ================= -->
+<div id="view-overenskommelse" class="grid">
+<form id="form" autocomplete="off" novalidate>
+
+<section class="card">
+  <h2><span class="n">1</span>Vad överenskommelsen gäller</h2>
+  <p class="lead">Välj om överenskommelsen gäller ett projekt, en tidsperiod med många uppdrag eller några mindre projekt samtidigt.</p>
+  <div class="scope" role="radiogroup" aria-label="Omfattning">
+    <label><input type="radio" name="scope" id="scope-projekt" value="projekt" checked><span><b>Ett projekt</b><small>Ett montageprojekt med egen arbetsplats.</small></span></label>
+    <label><input type="radio" name="scope" id="scope-period" value="period"><span><b>Tidsperiod</b><small>Service och kortare uppdrag, ofta flera per vecka.</small></span></label>
+    <label><input type="radio" name="scope" id="scope-flera" value="flera"><span><b>Flera mindre projekt</b><small>Några namngivna projekt under samma period.</small></span></label>
+  </div>
+
+  <div class="fields">
+    <div class="f"><label for="filial" class="req">Filial</label>
+      <select id="filial"><option value="">Välj filial</option><option>Eskilstuna</option><option>Katrineholm</option><option>Linköping</option><option>Norrköping</option><option>Nyköping/Södertälje</option></select></div>
+    <div class="f"><label for="pl" class="req">Projektledare / arbetsledare</label><input id="pl" placeholder="Namn"></div>
+    <div class="f"><label for="pltel" class="req">Telefon</label><input id="pltel" class="mono" inputmode="tel" placeholder="07x-xxx xx xx"></div>
+  </div>
+
+  <div id="box-projekt" class="fields" style="margin-top:14px">
+    <div class="f"><label for="p-namn" class="req">Projektnamn</label><input id="p-namn" placeholder="T.ex. Rådhuset etapp 2"></div>
+    <div class="f"><label for="p-nr" class="req">Projektnummer</label><input id="p-nr" class="mono"></div>
+    <div class="f wide"><label for="p-adr" class="req">Arbetsplatsens adress</label><input id="p-adr"></div>
+    <div class="f"><label for="p-best">Beställare / byggare</label><input id="p-best"></div>
+    <div class="f"><label for="p-start" class="req">Start montage</label><input id="p-start" type="date"></div>
+    <div class="f"><label for="p-slut">Beräknat slut</label><input id="p-slut" type="date"></div>
+  </div>
+
+  <div id="box-period" hidden style="margin-top:14px">
+    <div class="fields">
+      <div class="f"><label for="t-fran" class="req">Gäller från</label><input id="t-fran" type="date"></div>
+      <div class="f"><label for="t-langd">Giltighetstid</label>
+        <select id="t-langd"><option value="1">1 månad</option><option value="3" selected>3 månader</option><option value="6">6 månader</option><option value="12">12 månader</option><option value="x">Annat slutdatum</option></select></div>
+      <div class="f"><label for="t-till" class="req">Gäller till och med</label><input id="t-till" type="date"></div>
+      <div class="f"><label for="t-typ" class="req">Typ av uppdrag</label>
+        <select id="t-typ"><option>Service och underhåll</option><option>OVK och injustering</option><option>Service och mindre montage</option><option>Mindre montage</option><option>Blandade uppdrag</option></select></div>
+      <div class="f wide"><label for="t-omr">Område</label><input id="t-omr" placeholder="T.ex. Norrköping, Söderköping och Finspång"></div>
+    </div>
+    <p class="rule">Överenskommelsen gäller alla uppdrag under perioden. Restid räknas per uppdrag från utgångspunkten, kortaste väg på allmän väg, och styrks med körjournalen. Resor mellan uppdrag under dagen sker på arbetstid. <span class="ref">§ 7 p. 3–4</span></p>
+  </div>
+
+  <div id="box-flera" hidden style="margin-top:14px">
+    <div class="fields">
+      <div class="f"><label for="f-fran" class="req">Gäller från</label><input id="f-fran" type="date"></div>
+      <div class="f"><label for="f-till" class="req">Gäller till och med</label><input id="f-till" type="date"></div>
+    </div>
+    <p class="lbl" style="margin:16px 0 8px">Projekt som ingår</p>
+    <div class="rows" id="proj-rows"></div>
+    <button type="button" class="btn2 addrow" id="add-proj">+ Lägg till projekt</button>
+  </div>
+</section>
+
+<section class="card">
+  <h2><span class="n">2</span>Montörer</h2>
+  <p class="lead">Lägg till alla som arbetar enligt överenskommelsen. Namnen används sedan som förare och för egen bil.  Bostad som utgångspunkt gäller bara med ett slutdatum, därefter gäller verkstaden igen. Varje montör skriver under sin rad på den utskrivna överenskommelsen.</p>
+  <div class="rows" id="m-rows"></div>
+  <button type="button" class="btn2 addrow" id="add-m">+ Lägg till montör</button>
+</section>
+
+<section class="card">
+  <h2><span class="n">3</span>Arbetstid</h2>
+  <p class="lead">Normal arbetstid gäller om inget annat väljs. Arbetstiden börjar och slutar på arbetsplatsen.</p>
+  <div class="fields">
+    <div class="f wide"><label for="at-val">Arbetstid</label>
+      <select id="at-val"><option value="normal">Normal arbetstid: mån–fre 07.00–16.00, rast 09.00–09.30 och 13.00–13.30</option><option value="tidig">Tidig arbetstid: mån–tors 06.30–16.00, fredag 06.30–13.00 utan lunchrast</option><option value="annan">Annan arbetstid</option></select></div>
+  </div>
+  <div id="box-annan" hidden>
+    <div class="fields" style="margin-top:14px">
+      <div class="f"><label for="mt-start">Mån–tors start</label><select id="mt-start" class="mono tsel" data-def="07:00"></select></div>
+      <div class="f"><label for="mt-slut">Mån–tors slut</label><select id="mt-slut" class="mono tsel" data-def="16:00"></select></div>
+      <div class="f"><label for="fr-start">Fredag start</label><select id="fr-start" class="mono tsel" data-def="07:00"></select></div>
+      <div class="f"><label for="fr-slut">Fredag slut</label><select id="fr-slut" class="mono tsel" data-def="16:00"></select></div>
+      <div class="f"><label for="rast-min">Rast mån–tors</label><select id="rast-min"><option value="30">30 min</option><option value="45">45 min</option><option value="60" selected>60 min</option></select></div>
+      <div class="f"><label for="fr-rast-min">Rast fredag</label><select id="fr-rast-min"><option value="0">Ingen</option><option value="30">30 min</option><option value="45">45 min</option><option value="60" selected>60 min</option></select></div>
+      <div class="f"><label for="rast-tid">Rasternas förläggning</label><input id="rast-tid" value="09.00–09.30 och 13.00–13.30"></div>
+    </div>
+    <p class="note">Förläggningen ska ligga mån–fre mellan 05.00 och 22.00. Ändrad arbetstid meddelas normalt minst 14 dagar i förväg (§ 2 p. 2).</p>
+  </div>
+  <span id="hours" class="hours ok"></span>
+  <div class="fields" style="margin-top:14px">
+    <div class="f wide"><label for="oppet">Arbetsplatsens öppettider / inpassering</label><input id="oppet" placeholder="T.ex. enligt byggarens ordningsregler, ID06 vid grind"></div>
+  </div>
+  <p class="rule"><b>Inarbetad rast.</b> Ska en rast arbetas in någon dag aviserar montören det till projektledaren dagen innan, eller senast när rasten som arbetas in börjar.</p>
+</section>
+
+<section class="card">
+  <h2><span class="n">4</span>Sjukanmälan</h2>
+  <p class="lead">Vid sjukdom ringer montören projektledaren och meddelar också närmaste chef.</p>
+  <div class="fields">
+    <div class="f"><label for="sj-vem">Ring till</label>
+      <select id="sj-vem"><option value="pl">Projektledaren (ovan)</option><option value="annan">Annan person</option></select></div>
+    <div class="f" id="sj-namn-f" hidden><label for="sj-namn" class="req">Namn</label><input id="sj-namn"></div>
+    <div class="f" id="sj-tel-f" hidden><label for="sj-tel" class="req">Telefon</label><input id="sj-tel" class="mono" inputmode="tel"></div>
+    <div class="f"><label for="sj-nar">Senast</label>
+      <select id="sj-nar"><option>Före arbetstidens början</option><option>Senast kl. 06.30</option><option>Senast kl. 07.00</option><option>Dagen innan om möjligt, annars före arbetstidens början</option></select></div>
+  </div>
+  <div class="fields" style="margin-top:14px">
+    <div class="f"><label for="chef" class="req">Närmaste chef</label><input id="chef" placeholder="Namn"></div>
+    <div class="f"><label for="cheftel" class="req">Telefon</label><input id="cheftel" class="mono" inputmode="tel" placeholder="07x-xxx xx xx"></div>
+    <div class="f"><label for="chef-via">Meddela chefen via</label>
+      <select id="chef-via"><option>Sms eller samtal</option><option>Samtal</option><option>Sms</option></select></div>
+  </div>
+  <p class="lbl" style="margin:16px 0 8px">Meddela också</p>
+  <div class="checks">
+    <label><input type="checkbox" id="sj-kollega" checked> Samåkande kollegor</label>
+    <label><input type="checkbox" id="sj-arbled"> Arbetsledare på plats</label>
+    <label><input type="checkbox" id="sj-best"> Beställarens kontaktperson</label>
+  </div>
+  <p class="rule"><b>Friskanmälan</b> görs till projektledaren, senast dagen innan du kommer tillbaka.</p>
+</section>
+
+<section class="card">
+  <h2><span class="n">5</span>Resor och fordon</h2>
+  <p class="lead">Utgångspunkten är verkstaden. Resor mellan utgångspunkten och arbetsplatsen sker utom ordinarie arbetstid och ersätts med restid per km. Arbetar flera på samma projekt samåker vi, om inte annat överenskoms här.</p>
+  <p class="lbl" style="margin:0 0 8px">Fordon och samåkning</p>
+  <div class="rows" id="veh-rows"></div>
+  <button type="button" class="btn2 addrow" id="add-veh">+ Lägg till fordon</button>
+
+  <div class="fields" style="margin-top:18px">
+    <div class="f wide"><label for="eb-val">Egen bil</label>
+      <select id="eb-val"><option value="nej">Egen bil används inte</option><option value="ja">Egen bil är godkänd för vissa montörer</option></select></div>
+  </div>
+  <div id="eb-box" hidden><p class="lbl" style="margin:12px 0 8px">Godkänd för</p><div class="checks" id="eb-checks"></div>
+    <p class="note">Bilersättning plus restid per km, och vägtull och trängselskatt, enligt § 7 p. 3 b.</p></div>
+
+  <p class="rule"><b>Grossist.</b> Hämtning hos grossist görs efter beslut av projektledaren. Sker hämtningen på väg till eller från arbetsplatsen börjar eller slutar arbetstiden vid grossisten, och restid betalas för sträckan utgångspunkt–grossist.</p>
+  <p class="rule"><b>Resor under arbetsdagen.</b> Resor mellan arbetsplatser, till grossist eller till verkstaden under dagen sker på arbetstid med utgående lön. <span class="ref">§ 7 p. 4</span></p>
+  <p class="rule"><b>Körjournal.</b> Företagets bilar har automatisk körjournal. Vid resa med privat bil förs manuell körjournal. Körjournalen är underlag för ersättningen och stäms av mot tidrapporteringen.</p>
+</section>
+
+<section class="card">
+  <h2><span class="n">6</span>Parkering</h2>
+  <p class="lead">Projektledaren ordnar parkering innan arbetet börjar.</p>
+  <div class="fields">
+    <div class="f"><label for="pk-val">Lösning</label>
+      <select id="pk-val">
+        <option value="fri">Fri parkering på arbetsplatsen</option>
+        <option value="anvisad">Anvisad plats eller etableringsområde</option>
+        <option value="manad">Månadskort</option>
+        <option value="dag">Dagbiljett via parkeringsapp</option>
+        <option value="uppdrag">Löses per uppdrag</option>
+        <option value="ingen">Ingen parkering, samåkning gäller</option>
+      </select></div>
+    <div class="f" id="pk-plats-f"><label for="pk-plats" id="pk-plats-l">Plats</label><input id="pk-plats" placeholder="Adress eller beskrivning"></div>
+    <div class="f" id="pk-bet-f"><label for="pk-bet">Betalning</label>
+      <select id="pk-bet"><option>Företagets parkeringsapp/konto, projektnumret anges</option><option>Faktureras Ventilationsprojekt</option><option>Företagets betalkort</option><option>Utlägg mot kvitto</option></select></div>
+    <div class="f" id="pk-antal-f" hidden><label for="pk-antal">Antal månadskort</label><select id="pk-antal"><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
+  </div>
+  <p class="rule">Ventilationsprojekt betalar anvisad parkering, för både företagets bilar och egen bil med överenskommelse. Den som parkerar på annan plats betalar själv. Felparkeringsavgifter betalar föraren.</p>
+</section>
+
+<section class="card">
+  <h2><span class="n">7</span>Traktamente och logi</h2>
+  <div class="fields">
+    <div class="f"><label for="tr-val">Traktamente</label>
+      <select id="tr-val"><option value="nej">Ej aktuellt</option><option value="ja">Aktuellt: minst 50 km från verkstad och bostad, daglig hemresa inte möjlig</option></select></div>
+    <div class="f" id="tr-logi-f" hidden><label for="tr-logi">Logi ordnas av</label><select id="tr-logi"><option>Ventilationsprojekt</option><option>Den anställde (förrättningsbidrag)</option></select></div>
+    <div class="f" id="tr-res-f" hidden><label for="tr-res">Resdagar</label><input id="tr-res" placeholder="T.ex. måndag morgon och torsdag eftermiddag"></div>
+  </div>
+  <p class="note">§ 7 p. 1</p>
+</section>
+
+<section class="card">
+  <h2><span class="n">8</span>Övrigt</h2>
+  <p class="lead">Annat som har överenskommits och som inte täcks ovan.</p>
+  <div class="f"><label for="ovrigt">Övriga överenskommelser</label><textarea id="ovrigt" rows="4" placeholder="T.ex. särskilda tider för leveranser, nyckelhantering eller avvikande rutiner på arbetsplatsen"></textarea></div>
+</section>
+
+<section class="card">
+  <h2><span class="n">9</span>Ändringar</h2>
+  <p class="lead" style="margin:0">Ändras förutsättningarna (arbetstid, fordon, bemanning, parkering eller utgångspunkt) uppdateras överenskommelsen och skrivs under på nytt av de som berörs. Bostad som utgångspunkt upphör vid angivet datum, därefter gäller verkstaden.</p>
+</section>
+</form>
+
+<aside class="status" aria-label="Status">
+  <div class="panel">
+    <h3>Klar för underskrift?</h3>
+    <div id="state" class="state warn"></div>
+    <ul id="todo"></ul>
+    <button type="button" class="btn" id="dl-pdf">Skapa PDF för utskrift</button>
+    <button type="button" class="btn2 wide" id="dl-word">Skapa Word för justering</button>
+    <p class="msg" style="margin-top:6px">PDF när allt stämmer. Word om något behöver justeras före utskrift.</p>
+    <p class="msg" id="dl-msg" role="status"></p>
+    <div class="small">
+      <button type="button" class="btn2" id="clear">Börja om</button>
+    </div>
+    <div class="confirm" id="clear-confirm" hidden>Rensa alla uppgifter? <button type="button" class="btn2" id="clear-yes">Ja, rensa</button><button type="button" class="btn2" id="clear-no">Avbryt</button></div>
+    <p class="msg">Ifyllda uppgifter sparas som utkast i din webbläsare.</p>
+  </div>
+</aside>
+</div>
+
+</div>
+</main>
+<footer><div class="wrap">Ventilationsprojekt · Plåt- och Ventilationsavtalet 2025–2027 · Belopp 2026-05-01 – 2027-04-30</div></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/docx@9.5.1/dist/index.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+<script>
+(function(){
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const KEY='vp-overenskommelse-utkast-v1';
+
+const LOGO='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';
+
+/* ---------- views ---------- */
+function route(){}
+
+/* ---------- time selects ---------- */
+const times=[];for(let m=5*60;m<=22*60;m+=15){times.push(String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0'))}
+$$('.tsel').forEach(s=>{s.innerHTML=times.map(t=>`<option value="${t}">${t.replace(':','.')}</option>`).join('');s.value=s.dataset.def});
+
+/* ---------- dates ---------- */
+const iso=d=>d.toISOString().slice(0,10);
+function addMonths(s,n){const d=new Date(s+'T12:00:00');d.setMonth(d.getMonth()+n);d.setDate(d.getDate()-1);return iso(d)}
+const today=iso(new Date());
+const fmt=s=>s?s:'';
+
+/* ---------- dynamic rows state ---------- */
+let state={m:[{namn:'',utg:'verkstad',tom:'',km:'',fard:'passagerare'}],v:[{regnr:'',typ:'Poolbil',forare:'',pass:''}],p:[{nr:'',namn:'',adr:'',km:''}]};
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const scope=()=>($('input[name=scope]:checked')||{}).value||'projekt';
+
+function names(){return state.m.map(m=>m.namn.trim()).filter(Boolean)}
+
+function renderM(){
+  const per=scope()!=='projekt';
+  $('#m-rows').innerHTML=state.m.map((m,i)=>{
+    const ebOk=$('#eb-val').value==='ja'&&ebSel().includes(m.namn.trim());
+    const flag=m.fard==='egen'&&!ebOk?'Egen bil är inte godkänd för den här montören i avsnitt 4.':(m.utg==='bostad'&&!m.tom?'Ange till och med vilket datum bostaden gäller.':'');
+    return `<div class="row m${flag?' flag':''}">
+    <div class="f"><label for="m-namn-${i}">Namn</label><input id="m-namn-${i}" data-a="m" data-i="${i}" data-k="namn" value="${esc(m.namn)}"></div>
+    <div class="f"><label for="m-utg-${i}">Utgångspunkt</label><select id="m-utg-${i}" data-a="m" data-i="${i}" data-k="utg"><option value="verkstad"${m.utg==='verkstad'?' selected':''}>Verkstad</option><option value="bostad"${m.utg==='bostad'?' selected':''}>Bostad</option></select></div>
+    <div class="f"${m.utg==='bostad'?'':' hidden'}><label for="m-tom-${i}">Bostad t.o.m.</label><input type="date" id="m-tom-${i}" data-a="m" data-i="${i}" data-k="tom" value="${esc(m.tom)}"></div>
+    ${m.utg==='bostad'?'':'<div class="f"><span class="lbl">&nbsp;</span><span class="note" style="margin:0;padding:9px 0">Gäller tills vidare</span></div>'}
+    <div class="f"><label for="m-km-${i}">Km enkel</label>${per?'<span class="note" style="margin:0;padding:9px 0">Per uppdrag</span>':`<input id="m-km-${i}" class="mono" inputmode="numeric" data-a="m" data-i="${i}" data-k="km" value="${esc(m.km)}">`}</div>
+    <div class="f"><label for="m-fard-${i}">Färdsätt</label><select id="m-fard-${i}" data-a="m" data-i="${i}" data-k="fard">
+      ${[['forare','Förare, företagets bil'],['passagerare','Passagerare'],['service','Egen servicebil'],['forman','Förmånsbil'],['egen','Egen bil']].map(([v,t])=>`<option value="${v}"${m.fard===v?' selected':''}>${t}</option>`).join('')}</select></div>
+    <button type="button" class="x" data-del="m" data-i="${i}" aria-label="Ta bort montör">×</button>
+    ${flag?`<p class="flagtxt">${flag}</p>`:''}</div>`}).join('');
+}
+function renderV(){
+  const opts=sel=>[names().length?'<option value="">Välj</option>':'<option value="">Lägg till montörer i avsnitt 2</option>',...names().map(n=>`<option${n===sel?' selected':''}>${esc(n)}</option>`)].join('');
+  $('#veh-rows').innerHTML=state.v.map((v,i)=>`<div class="row v">
+    <div class="f"><label for="v-reg-${i}">Regnr</label><input id="v-reg-${i}" class="mono" data-a="v" data-i="${i}" data-k="regnr" value="${esc(v.regnr)}" style="text-transform:uppercase"></div>
+    <div class="f"><label for="v-typ-${i}">Typ av bil</label><select id="v-typ-${i}" data-a="v" data-i="${i}" data-k="typ">${['Poolbil','Servicebil','Förmånsbil','Privat bil (godkänd)'].map(t=>`<option${t===v.typ?' selected':''}>${t}</option>`).join('')}</select></div>
+    <div class="f"><label for="v-for-${i}">Förare</label><select id="v-for-${i}" data-a="v" data-i="${i}" data-k="forare">${opts(v.forare)}</select></div>
+    <div class="f"><label for="v-pass-${i}">Upphämtning (plats/tid)</label><input id="v-pass-${i}" data-a="v" data-i="${i}" data-k="pass" value="${esc(v.pass)}" placeholder="T.ex. verkstaden 06.30"></div>
+    <button type="button" class="x" data-del="v" data-i="${i}" aria-label="Ta bort fordon">×</button></div>`).join('');
+}
+function renderP(){
+  $('#proj-rows').innerHTML=state.p.map((p,i)=>`<div class="row p">
+    <div class="f"><label for="pp-nr-${i}">Projektnr</label><input id="pp-nr-${i}" class="mono" data-a="p" data-i="${i}" data-k="nr" value="${esc(p.nr)}"></div>
+    <div class="f"><label for="pp-namn-${i}">Projekt</label><input id="pp-namn-${i}" data-a="p" data-i="${i}" data-k="namn" value="${esc(p.namn)}"></div>
+    <div class="f"><label for="pp-adr-${i}">Adress</label><input id="pp-adr-${i}" data-a="p" data-i="${i}" data-k="adr" value="${esc(p.adr)}"></div>
+    <div class="f"><label for="pp-km-${i}">Km från verkstad</label><input id="pp-km-${i}" class="mono" inputmode="numeric" data-a="p" data-i="${i}" data-k="km" value="${esc(p.km)}"></div>
+    <button type="button" class="x" data-del="p" data-i="${i}" aria-label="Ta bort projekt">×</button></div>`).join('');
+}
+let ebSaved=[];
+function ebSel(){return $$('#eb-checks input:checked').map(c=>c.value)}
+function renderEB(){
+  const cur=$('#eb-checks').children.length?ebSel():ebSaved;
+  $('#eb-checks').innerHTML=names().length?names().map((n,i)=>`<label><input type="checkbox" id="eb-${i}" value="${esc(n)}"${cur.includes(n)?' checked':''}> ${esc(n)}</label>`).join(''):'<span class="note" style="margin:0">Lägg till montörer i avsnitt 7 först.</span>';
+}
+function renderAll(){renderP();renderEB();renderV();renderM();}
+
+/* ---------- conditional ---------- */
+function cond(){
+  const s=scope();
+  $('#box-projekt').hidden=s!=='projekt';$('#box-period').hidden=s!=='period';$('#box-flera').hidden=s!=='flera';
+  $('#box-annan').hidden=$('#at-val').value!=='annan';
+  const sa=$('#sj-vem').value==='annan';$('#sj-namn-f').hidden=!sa;$('#sj-tel-f').hidden=!sa;
+  $('#eb-box').hidden=$('#eb-val').value!=='ja';
+  const pk=$('#pk-val').value;
+  $('#pk-plats-f').hidden=['ingen','uppdrag'].includes(pk);
+  $('#pk-plats-l').textContent=pk==='fri'?'Plats (valfritt)':pk==='manad'?'Parkeringsanläggning':pk==='dag'?'Zon eller område':'Plats';
+  $('#pk-bet-f').hidden=['fri','ingen'].includes(pk);
+  $('#pk-antal-f').hidden=pk!=='manad';
+  const tr=$('#tr-val').value==='ja';$('#tr-logi-f').hidden=!tr;$('#tr-res-f').hidden=!tr;
+  // period end
+  if(s==='period'){const l=$('#t-langd').value;$('#t-till').readOnly=l!=='x';if(l!=='x'&&$('#t-fran').value)$('#t-till').value=addMonths($('#t-fran').value,+l);}
+  hours();
+}
+const mins=t=>{const[h,m]=t.split(':').map(Number);return h*60+m};
+function weekHours(){if($('#at-val').value!=='annan')return 40;const r=+$('#rast-min').value,rf=+$('#fr-rast-min').value;
+  return (4*(mins($('#mt-slut').value)-mins($('#mt-start').value)-r)+(mins($('#fr-slut').value)-mins($('#fr-start').value)-rf))/60;}
+function hours(){const h=weekHours(),el=$('#hours');const t=String(Math.round(h*100)/100).replace('.',',');
+  el.className='hours '+(h===40?'ok':'warn');el.textContent=h===40?`${t} tim per vecka`:`${t} tim per vecka. Ordinarie arbetstid är 40 tim`;}
+
+/* ---------- validation ---------- */
+function issues(){
+  const req=[],warn=[],v=id=>$(id).value.trim(),s=scope();
+  if(!v('#filial'))req.push('Välj filial');
+  if(!v('#pl'))req.push('Ange projektledare');
+  if(!v('#pltel'))req.push('Ange projektledarens telefon');
+  if(s==='projekt'){if(!v('#p-namn'))req.push('Ange projektnamn');if(!v('#p-nr'))req.push('Ange projektnummer');if(!v('#p-adr'))req.push('Ange arbetsplatsens adress');if(!v('#p-start'))req.push('Ange startdatum');}
+  if(s==='period'){if(!v('#t-fran')||!v('#t-till'))req.push('Ange period');}
+  if(s==='flera'){if(!v('#f-fran')||!v('#f-till'))req.push('Ange period');if(!state.p.some(p=>p.namn.trim()))req.push('Lägg till minst ett projekt');}
+  if($('#sj-vem').value==='annan'&&(!v('#sj-namn')||!v('#sj-tel')))req.push('Ange vem som ska ringas vid sjukanmälan');
+  if(!v('#chef')||!v('#cheftel'))req.push('Ange närmaste chef och telefon');
+  if(!names().length)req.push('Lägg till minst en montör');
+  if(state.m.some(m=>m.utg==='bostad'&&!m.tom))req.push('Slutdatum saknas för bostad som utgångspunkt');
+  const end=s==='period'?v('#t-till'):s==='flera'?v('#f-till'):v('#p-slut');
+  if(end&&state.m.some(m=>m.utg==='bostad'&&m.tom&&m.tom>end))warn.push('Bostad som utgångspunkt gäller längre än överenskommelsen');
+  if(state.m.some(m=>m.fard==='egen'&&!($('#eb-val').value==='ja'&&ebSel().includes(m.namn.trim()))))req.push('Egen bil är inte godkänd för alla som har valt egen bil');
+  if($('#pk-val').value==='anvisad'&&!v('#pk-plats'))req.push('Ange anvisad parkeringsplats');
+  if(weekHours()!==40)warn.push('Arbetstiden avviker från 40 tim per vecka');
+  if(s==='projekt'&&state.m.some(m=>m.namn.trim()&&!m.km))warn.push('Km saknas för någon montör');
+  return {req,warn};
+}
+function status(){
+  const {req,warn}=issues(),st=$('#state');
+  st.className='state '+(req.length?'warn':'ok');
+  st.textContent=req.length?`${req.length} ${req.length===1?'uppgift saknas':'uppgifter saknas'}`:'Klar för underskrift';
+  $('#todo').innerHTML=req.map(t=>`<li>${esc(t)}</li>`).join('')+warn.map(t=>`<li class="w">${esc(t)}</li>`).join('');
+}
+
+/* ---------- draft ---------- */
+const FIELDS=()=>$$('#form input:not([data-a]), #form select:not([data-a]), #form textarea').filter(el=>!el.closest('#eb-checks'));
+function save(){try{const o={};FIELDS().forEach(el=>{if(el.type==='radio'){if(el.checked)o['scope']=el.value}else o[el.id]=el.type==='checkbox'?el.checked:el.value});
+  o._rows=state;o._eb=ebSel();localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}
+function load(){let o=null;try{o=JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){}
+  if(!o)return false;
+  FIELDS().forEach(el=>{if(el.type==='radio'){el.checked=o.scope===el.value}else if(el.id in o){el.type==='checkbox'?el.checked=!!o[el.id]:el.value=o[el.id]}});
+  if(o._rows)state=o._rows;ebSaved=o._eb||[];return true;}
+
+function refresh(full){if(full)renderAll();cond();status();save();}
+
+/* ---------- events ---------- */
+$('#form').addEventListener('submit',e=>e.preventDefault());
+$('#form').addEventListener('input',e=>{const t=e.target;
+  if(t.dataset.a){state[t.dataset.a][+t.dataset.i][t.dataset.k]=t.value;
+    if(t.dataset.a==='m'&&t.dataset.k==='namn'){renderEB();renderV();}
+    status();save();return}
+  if(t.closest('#eb-checks')){renderM();status();save();return}
+  refresh(t.name==='scope'||t.id==='eb-val');});
+$('#form').addEventListener('change',e=>{const t=e.target;if(t.dataset.a&&(t.tagName==='SELECT'||t.type==='date')){refresh(true)}else if(t.closest('#eb-checks')){renderM();status();save()}});
+$('#form').addEventListener('click',e=>{const d=e.target.closest('[data-del]');if(!d)return;const a=d.dataset.del;state[a].splice(+d.dataset.i,1);refresh(true);});
+$('#add-m').onclick=()=>{state.m.push({namn:'',utg:'verkstad',tom:'',km:'',fard:'passagerare'});refresh(true);$('#m-namn-'+(state.m.length-1)).focus()};
+$('#add-veh').addEventListener('click',()=>{state.v.push({regnr:'',typ:'Poolbil',forare:'',pass:''});refresh(true)});
+$('#add-proj').addEventListener('click',()=>{state.p.push({nr:'',namn:'',adr:'',km:''});refresh(true)});
+$('#clear').onclick=()=>{$('#clear-confirm').hidden=false};
+$('#clear-no').onclick=()=>{$('#clear-confirm').hidden=true};
+$('#clear-yes').onclick=()=>{try{localStorage.removeItem(KEY)}catch(e){};location.reload()};
+
+/* ---------- Export (PDF och Word från samma innehåll) ---------- */
+function summary(){
+  const s=scope(),v=id=>$(id).value.trim();
+  const atv=$('#at-val').value,frR=$('#fr-rast-min').value;
+  const at=atv==='annan'
+    ?`Mån–tors ${v('#mt-start').replace(':','.')}–${v('#mt-slut').replace(':','.')} med ${$('#rast-min').value} min rast, fredag ${v('#fr-start').replace(':','.')}–${v('#fr-slut').replace(':','.')} med ${frR==='0'?'ingen rast':frR+' min rast'}. Raster: ${v('#rast-tid')}.`
+    :atv==='tidig'?'Tidig arbetstid: måndag–torsdag 06.30–16.00 med rast 09.00–09.30 och 13.00–13.30, fredag 06.30–13.00 med rast 09.00–09.30 och ingen lunchrast.'
+    :'Normal arbetstid: måndag–fredag 07.00–16.00 med rast 09.00–09.30 och 13.00–13.30.';
+  const sjNamn=$('#sj-vem').value==='annan'?`${v('#sj-namn')}, ${v('#sj-tel')}`:`${v('#pl')} (projektledare), ${v('#pltel')}`;
+  const also=[['#sj-kollega','samåkande kollegor'],['#sj-arbled','arbetsledare på plats'],['#sj-best','beställarens kontaktperson']].filter(([id])=>$(id).checked).map(x=>x[1]);
+  const pkMap={fri:'Fri parkering på arbetsplatsen',anvisad:'Anvisad plats eller etableringsområde',manad:`Månadskort (${v('#pk-antal')} st)`,dag:'Dagbiljett via parkeringsapp',uppdrag:'Parkering löses per uppdrag',ingen:'Ingen parkering ordnas, samåkning gäller'};
+  const pk=$('#pk-val').value;
+  let pkTxt=pkMap[pk];if(!$('#pk-plats-f').hidden&&v('#pk-plats'))pkTxt+=`: ${v('#pk-plats')}`;pkTxt+='.';if(!$('#pk-bet-f').hidden)pkTxt+=` Betalning: ${v('#pk-bet').toLowerCase()}.`;
+  return {s,at,sjNamn,also,pkTxt};
+}
+/* Innehållsmodell: h = rubrik, p = stycke av [text, fet], kv = etikett/värde-par, tbl = tabell, sign = underskriftsrad */
+function model(){
+  const S=summary(),v=id=>$(id).value.trim(),B=[];
+  const P=(...runs)=>B.push({t:'p',runs:runs.map(x=>typeof x==='string'?[x,false]:x)});
+  let hn=0;const H=(n,t)=>B.push({t:'h',text:`${++hn}  ${t}`});
+  const scopeTxt={projekt:'Ett projekt',period:'Tidsperiod',flera:'Flera mindre projekt'}[S.s];
+  const meta=`${scopeTxt} · Filial ${v('#filial')||'–'} · Upprättad ${today}`;
+  P('Överenskommelsen träffas mellan Ventilationsprojekt och de anställda nedan, i enlighet med Plåt- och Ventilationsavtalet. Den ska vara undertecknad innan arbetet börjar. Original sparas i projektmappen, kopia till lön.');
+  H('1','Omfattning');
+  if(S.s==='projekt')B.push({t:'kv',pairs:[['Projektnamn',v('#p-namn')],['Projektnummer',v('#p-nr')],['Arbetsplats',v('#p-adr')],['Beställare/byggare',v('#p-best')],['Start montage',v('#p-start')],['Beräknat slut',v('#p-slut')],['Projektledare',v('#pl')],['Telefon',v('#pltel')]]});
+  if(S.s==='period'){B.push({t:'kv',pairs:[['Gäller från',v('#t-fran')],['Gäller t.o.m.',v('#t-till')],['Typ av uppdrag',v('#t-typ')],['Område',v('#t-omr')],['Projektledare',v('#pl')],['Telefon',v('#pltel')]]});
+    P('Överenskommelsen gäller alla uppdrag under perioden. Restid räknas per uppdrag från utgångspunkten, kortaste väg på allmän väg, och styrks med körjournalen. Resor mellan uppdrag under dagen sker på arbetstid (§ 7 p. 3–4).');}
+  if(S.s==='flera'){B.push({t:'kv',pairs:[['Gäller från',v('#f-fran')],['Gäller t.o.m.',v('#f-till')],['Projektledare',v('#pl')],['Telefon',v('#pltel')]]});
+    B.push({t:'tbl',w:[15,31,39,15],head:['Projektnr','Projekt','Adress','Km verkstad'],rows:state.p.filter(x=>x.namn||x.nr).map(x=>[x.nr,x.namn,x.adr,x.km])});}
+  H('2','Arbetstid');
+  P(S.at+' Arbetstiden börjar och slutar på arbetsplatsen.');
+  if(v('#oppet'))P(`Öppettider/inpassering: ${v('#oppet')}`);
+  P(['Inarbetad rast. ',true],'Ska en rast arbetas in någon dag aviserar montören det till projektledaren dagen innan, eller senast när rasten som arbetas in börjar.');
+  H('3','Sjukanmälan');
+  P(`Ring ${S.sjNamn}. ${$('#sj-nar').value}. Meddela också närmaste chef ${v('#chef')}, ${v('#cheftel')} (${$('#chef-via').value.toLowerCase()}).${S.also.length?' Meddela även '+S.also.join(', ')+'.':''} Friskanmälan görs till projektledaren, senast dagen innan du kommer tillbaka.`);
+  H('4','Resor och fordon');
+  P('Utgångspunkten är verkstaden. Resor mellan utgångspunkten och arbetsplatsen sker utom ordinarie arbetstid och ersätts med restid per km. Arbetar flera på samma projekt samåker vi, om inte annat anges nedan.');
+  const vv=state.v.filter(x=>x.regnr||x.forare);
+  if(vv.length)B.push({t:'tbl',w:[17,24,26,33],head:['Regnr','Typ av bil','Förare','Upphämtning'],rows:vv.map(x=>[x.regnr.toUpperCase(),x.typ,x.forare,x.pass])});
+  const eb=$('#eb-val').value==='ja'?ebSel():[];
+  P(['Egen bil. ',true],eb.length?`Godkänd för ${eb.join(', ')}. Bilersättning plus restid per km, och vägtull och trängselskatt (§ 7 p. 3 b).`:'Egen bil används inte.');
+  P(['Grossist. ',true],'Hämtning görs efter beslut av projektledaren. Sker den på väg till eller från arbetsplatsen börjar eller slutar arbetstiden vid grossisten, och restid betalas för sträckan utgångspunkt–grossist.');
+  P(['Resor under arbetsdagen ',true],'sker på arbetstid med utgående lön (§ 7 p. 4). ',['Körjournal: ',true],'företagets bilar har automatisk körjournal, vid privat bil förs manuell körjournal. Den är underlag för ersättningen.');
+  H('5','Parkering');
+  P(S.pkTxt+' Ventilationsprojekt betalar anvisad parkering, för både företagets bilar och egen bil med överenskommelse. Den som parkerar på annan plats betalar själv. Felparkeringsavgifter betalar föraren.');
+  H('6','Traktamente och logi');
+  P($('#tr-val').value==='ja'?`Aktuellt (§ 7 p. 1). Logi ordnas av: ${v('#tr-logi').toLowerCase()}. Resdagar: ${v('#tr-res')||'–'}.`:'Ej aktuellt.');
+  if(v('#ovrigt')){H('7','Övrigt');v('#ovrigt').split(/\n+/).forEach(l=>{if(l.trim())P(l.trim())})}
+  H('7','Montörer');
+  P('Med underskriften bekräftar montören utgångspunkt, kilometer och färdsätt.');
+  const fardT={forare:'Förare, företagets bil',passagerare:'Passagerare',service:'Egen servicebil',forman:'Förmånsbil',egen:'Egen bil'};
+  const per=S.s!=='projekt';
+  const mrows=state.m.filter(x=>x.namn.trim()).map(x=>[x.namn,x.utg==='bostad'?`Bostad t.o.m. ${x.tom}`:'Verkstad',per?'Per uppdrag':x.km,fardT[x.fard],'','']);
+  mrows.push(['','','','','',''],['','','','','','']);
+  B.push({t:'tbl',w:[22,21,10,18,18,11],head:['Namn','Utgångspunkt','Km enkel','Färdsätt','Underskrift','Datum'],rows:mrows,tall:true});
+  H('8','Ändringar');
+  P('Ändras förutsättningarna (arbetstid, fordon, bemanning, parkering eller utgångspunkt) uppdateras överenskommelsen och skrivs under på nytt av de som berörs. Bostad som utgångspunkt upphör vid angivet datum, därefter gäller verkstaden.');
+  B.push({t:'sign',left:'Ort och datum',right:`Underskrift projektledare (${v('#pl')})`});
+  return {meta,blocks:B};
+}
+function b64ToBytes(b){const s=atob(b),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u}
+const TITLE='Överenskommelse arbetstid och resor';
+
+function buildDoc(M){
+  const D=window.docx;const {Document,Paragraph,TextRun,Table,TableRow,TableCell,WidthType,ShadingType,BorderStyle,AlignmentType,ImageRun,Header,Footer,PageNumber,TableLayoutType,VerticalAlign}=D;
+  const RED='B2071B',GREY='BBBFC2',LIGHT='F2F3F4',F='Arial',W=9866;
+  const r=(t,o={})=>new TextRun({text:t,font:F,size:o.size||19,bold:o.bold,color:o.color||'222222'});
+  const bd={style:BorderStyle.SINGLE,size:4,color:GREY},BB={top:bd,bottom:bd,left:bd,right:bd};
+  const c=(t,w,o={})=>new TableCell({width:{size:w,type:WidthType.DXA},borders:BB,shading:o.fill?{type:ShadingType.CLEAR,color:'auto',fill:o.fill}:undefined,margins:{top:60,bottom:60,left:100,right:100},verticalAlign:VerticalAlign.CENTER,
+     children:[new Paragraph({children:[r(t||'',{size:17,bold:o.bold})],spacing:{after:0}})]});
+  const lab=(t,w)=>c(t,w,{fill:LIGHT,bold:true});
+  const tbl=(ws,rows)=>new Table({width:{size:W,type:WidthType.DXA},columnWidths:ws,layout:TableLayoutType.FIXED,rows});
+  const tr=(cells,h)=>new TableRow({children:cells,cantSplit:true,height:h?{value:h,rule:'atLeast'}:undefined});
+  const body=[new Paragraph({children:[new TextRun({text:TITLE,font:F,size:34,bold:true,color:RED})],spacing:{after:40}}),
+    new Paragraph({children:[r(M.meta,{size:18,color:'555555'})],spacing:{after:120}})];
+  for(const b of M.blocks){
+    if(b.t==='h')body.push(new Paragraph({children:[new TextRun({text:b.text,font:F,size:22,bold:true,color:RED})],spacing:{before:200,after:80},keepNext:true,border:{bottom:{style:BorderStyle.SINGLE,size:6,color:RED,space:2}}}));
+    if(b.t==='p')body.push(new Paragraph({children:b.runs.map(([t,bold])=>r(t,{bold})),spacing:{after:80,line:264}}));
+    if(b.t==='kv'){const ws=[2200,2733,2200,2733],rows=[];for(let i=0;i<b.pairs.length;i+=2){const a=b.pairs[i],z=b.pairs[i+1]||['',''];rows.push(tr([lab(a[0],ws[0]),c(a[1],ws[1]),lab(z[0],ws[2]),c(z[1],ws[3])],380))}body.push(tbl(ws,rows),new Paragraph({children:[],spacing:{after:60}}))}
+    if(b.t==='tbl'){const ws=b.w.map(x=>Math.round(W*x/100));body.push(tbl(ws,[tr(b.head.map((h,i)=>lab(h,ws[i]))),...b.rows.map(row=>tr(row.map((t,i)=>c(t,ws[i])),b.tall?620:340))]),new Paragraph({children:[],spacing:{after:60}}))}
+    if(b.t==='sign'){const nb={style:BorderStyle.NONE,size:0,color:'FFFFFF'},NB={top:nb,bottom:nb,left:nb,right:nb},LN={...NB,top:{style:BorderStyle.SINGLE,size:4,color:'555555'}};
+      const sc=(t,w,bb)=>new TableCell({width:{size:w,type:WidthType.DXA},borders:bb,children:[new Paragraph({children:[r(t,{size:16,color:'555555'})],spacing:{after:0}})]});
+      body.push(new Table({width:{size:W,type:WidthType.DXA},columnWidths:[4733,400,4733],layout:TableLayoutType.FIXED,rows:[
+        new TableRow({height:{value:700,rule:'atLeast'},children:[sc('',4733,NB),sc('',400,NB),sc('',4733,NB)]}),
+        new TableRow({children:[sc(b.left,4733,LN),sc('',400,NB),sc(b.right,4733,LN)]})]}))}
+  }
+  return new Document({creator:'Ventilationsprojekt',title:TITLE,styles:{default:{document:{run:{font:F,size:19}}}},
+    sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:1300,bottom:1000,left:1020,right:1020,header:500,footer:450}}},
+      headers:{default:new Header({children:[new Paragraph({alignment:AlignmentType.RIGHT,children:[new ImageRun({type:'png',data:b64ToBytes(LOGO),transformation:{width:150,height:41}})]})]})},
+      footers:{default:new Footer({children:[new Paragraph({border:{top:{style:BorderStyle.SINGLE,size:4,color:GREY,space:4}},children:[r('Ventilationsprojekt · '+TITLE+' · Sida ',{size:14,color:'888888'}),new TextRun({children:[PageNumber.CURRENT],font:F,size:14,color:'888888'}),r(' av ',{size:14,color:'888888'}),new TextRun({children:[PageNumber.TOTAL_PAGES],font:F,size:14,color:'888888'})]})]})},
+      children:body}]});
+}
+
+function buildPdf(M){
+  const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:'mm',format:'a4'});
+  const PW=210,PH=297,ML=18,MR=18,CW=PW-ML-MR,TOP=30,BOT=20;
+  const RED=[178,7,27],GREY=[187,191,194],LIGHT=[242,243,244],INK=[34,34,34],MUT=[85,85,85];
+  let y=TOP;
+  const head=()=>{doc.addImage('data:image/png;base64,'+LOGO,'PNG',PW-MR-40,10,40,40*54/198)};
+  head();
+  const need=h=>{if(y+h>PH-BOT){doc.addPage();head();y=TOP}};
+  const txt=(t,size,style,color)=>{doc.setFont('helvetica',style);doc.setFontSize(size);doc.setTextColor(...color)};
+  txt('',17,'bold',RED);doc.text(TITLE,ML,y);y+=6;
+  txt('',9,'normal',MUT);doc.text(M.meta,ML,y);y+=7;
+  const LH=4.4;
+  function para(runs){ // ordbrytning med blandad fet/normal text
+    const words=[];runs.forEach(([t,b])=>t.split(/(\s+)/).forEach(w=>{if(w)words.push([w,b])}));
+    const lines=[[]];let w=0;
+    for(const [wd,b] of words){txt('',9.5,b?'bold':'normal',INK);const ww=doc.getTextWidth(wd);
+      if(/^\s+$/.test(wd)){if(lines[lines.length-1].length){lines[lines.length-1].push([wd,b,ww]);w+=ww}continue}
+      if(w+ww>CW&&lines[lines.length-1].length){const L=lines[lines.length-1];while(L.length&&/^\s+$/.test(L[L.length-1][0]))L.pop();lines.push([]);w=0}
+      lines[lines.length-1].push([wd,b,ww]);w+=ww}
+    for(const L of lines){need(LH);let x=ML;for(const [wd,b,ww] of L){txt('',9.5,b?'bold':'normal',INK);doc.text(wd,x,y);x+=ww}y+=LH}
+    y+=1.6;
+  }
+  const at=(opts)=>{doc.autoTable(Object.assign({startY:y,margin:{left:ML,right:MR,top:TOP,bottom:BOT},theme:'grid',
+    styles:{font:'helvetica',fontSize:8.5,textColor:INK,lineColor:GREY,lineWidth:0.2,cellPadding:1.8,valign:'middle'},
+    headStyles:{fillColor:LIGHT,textColor:INK,fontStyle:'bold'},didDrawPage:()=>head()},opts));y=doc.lastAutoTable.finalY+5};
+  for(const b of M.blocks){
+    if(b.t==='h'){need(14);y+=3;txt('',11,'bold',RED);doc.text(b.text,ML,y);y+=1.6;doc.setDrawColor(...RED);doc.setLineWidth(0.35);doc.line(ML,y,PW-MR,y);y+=4.6}
+    if(b.t==='p')para(b.runs);
+    if(b.t==='kv'){const body=[];for(let i=0;i<b.pairs.length;i+=2){const a=b.pairs[i],z=b.pairs[i+1]||['',''];body.push([a[0],a[1],z[0],z[1]])}
+      const lab={fillColor:LIGHT,fontStyle:'bold'};
+      at({body,columnStyles:{0:Object.assign({cellWidth:CW*.22},lab),1:{cellWidth:CW*.28},2:Object.assign({cellWidth:CW*.22},lab),3:{cellWidth:CW*.28}}})}
+    if(b.t==='tbl'){need(b.tall?40:16);const cs={};b.w.forEach((w,i)=>cs[i]={cellWidth:CW*w/100});
+      at({head:[b.head],body:b.rows,columnStyles:cs,rowPageBreak:'avoid',bodyStyles:b.tall?{minCellHeight:11}:{}})}
+    if(b.t==='sign'){need(22);y+=14;const half=(CW-8)/2;doc.setDrawColor(...MUT);doc.setLineWidth(0.25);
+      doc.line(ML,y,ML+half,y);doc.line(ML+half+8,y,PW-MR,y);txt('',8,'normal',MUT);doc.text(b.left,ML,y+4);doc.text(b.right,ML+half+8,y+4);y+=8}
+  }
+  const n=doc.getNumberOfPages();
+  for(let i=1;i<=n;i++){doc.setPage(i);doc.setDrawColor(...GREY);doc.setLineWidth(0.2);doc.line(ML,PH-13,PW-MR,PH-13);
+    txt('',7.5,'normal',[136,136,136]);doc.text(`Ventilationsprojekt · ${TITLE} · Sida ${i} av ${n}`,ML,PH-9)}
+  return doc.output('blob');
+}
+
+function fileName(ext){const s=scope(),v=id=>$(id).value.trim();
+  const tag=s==='projekt'?(v('#p-nr')||v('#p-namn')||'projekt'):s==='period'?`period_${v('#t-fran')}`:`flera_${v('#f-fran')}`;
+  return `Overenskommelse_arbetstid_resor_${tag}`.replace(/[^\wåäöÅÄÖ.-]+/g,'_')+'.'+ext;}
+
+async function exportFile(kind){
+  const msg=$('#dl-msg');
+  const ready=kind==='pdf'?(window.jspdf&&window.jspdf.jsPDF&&window.jspdf.jsPDF.API.autoTable):window.docx;
+  if(!ready){msg.textContent=(kind==='pdf'?'PDF':'Word')+'-funktionen kunde inte laddas. Ladda om sidan och försök igen.';return}
+  const {req}=issues();
+  msg.textContent=req.length?'Filen skapas, men komplettera det som saknas innan underskrift.':'Skapar filen…';
+  try{
+    const M=model();
+    const blob=kind==='pdf'?buildPdf(M):await window.docx.Packer.toBlob(buildDoc(M));
+    const name=fileName(kind==='pdf'?'pdf':'docx'),label=kind==='pdf'?'PDF-filen':'Word-filen';
+    let downloads=null;if(window.claude&&window.claude.use){try{downloads=await window.claude.use('downloads')}catch(e){}}
+    if(downloads){try{await downloads.save({filename:name,data:blob});msg.textContent=label+' är sparad.'}catch(e){msg.textContent=e&&e.code==='declined'?'Nedladdningen avbröts.':'Nedladdning är inte tillgänglig här.'}}
+    else if(!window.claude){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();msg.textContent=label+' är nedladdad.'}
+    else msg.textContent='Nedladdning är inte tillgänglig i den här vyn.';
+  }catch(e){msg.textContent='Filen kunde inte skapas. Försök igen.'}
+}
+$('#dl-pdf').onclick=()=>exportFile('pdf');
+$('#dl-word').onclick=()=>exportFile('word');
+
+/* ---------- init ---------- */
+if(!load()){$('#p-start').value=today;$('#t-fran').value=today;$('#f-fran').value=today;$('#f-till').value=addMonths(today,1);}
+route();renderAll();cond();status();
+})();
+</script>
+
+</body>
+</html>
