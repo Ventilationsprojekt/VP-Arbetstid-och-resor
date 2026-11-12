@@ -392,7 +392,7 @@ function renderM(){
     ${m.utg==='bostad'?'':'<div class="f"><span class="lbl">&nbsp;</span><span class="note" style="margin:0;padding:9px 0">Gäller tills vidare</span></div>'}
     <div class="f"><label for="m-km-${i}">Km enkel</label>${per?'<span class="note" style="margin:0;padding:9px 0">Per uppdrag</span>':`<input id="m-km-${i}" class="mono" inputmode="numeric" data-a="m" data-i="${i}" data-k="km" value="${esc(m.km)}">`}</div>
     <div class="f"><label for="m-fard-${i}">Färdsätt</label><select id="m-fard-${i}" data-a="m" data-i="${i}" data-k="fard">
-      ${[['forare','Förare, företagets bil'],['passagerare','Passagerare'],['service','Egen servicebil'],['forman','Förmånsbil'],['egen','Egen bil']].map(([v,t])=>`<option value="${v}"${m.fard===v?' selected':''}>${t}</option>`).join('')}</select></div>
+      ${[['forare','Förare, företagets bil'],['passagerare','Passagerare'],['service','Egen servicebil'],['forman','Förmånsbil'],['egen','Egen bil'],['annat','Annat (gång, cykel, kollektivt)']].map(([v,t])=>`<option value="${v}"${m.fard===v?' selected':''}>${t}</option>`).join('')}</select></div>
     <button type="button" class="x" data-del="m" data-i="${i}" aria-label="Ta bort montör">×</button>
     ${flag?`<p class="flagtxt">${flag}</p>`:''}</div>`}).join('');
 }
@@ -531,7 +531,7 @@ function model(){
     B.push({t:'tbl',w:[15,31,39,15],head:['Projektnr','Projekt','Adress','Km verkstad'],rows:state.p.filter(x=>x.namn||x.nr).map(x=>[x.nr,x.namn,x.adr,x.km])});}
   H('7','Montörer');
   P('Med underskriften bekräftar montören utgångspunkt, kilometer och färdsätt.');
-  const fardT={forare:'Förare, företagets bil',passagerare:'Passagerare',service:'Egen servicebil',forman:'Förmånsbil',egen:'Egen bil'};
+  const fardT={forare:'Förare, företagets bil',passagerare:'Passagerare',service:'Egen servicebil',forman:'Förmånsbil',egen:'Egen bil',annat:'Annat (gång, cykel, kollektivt)'};
   const per=S.s!=='projekt';
   const mrows=state.m.filter(x=>x.namn.trim()).map(x=>[x.namn,x.utg==='bostad'?`Bostad t.o.m. ${x.tom}`:'Verkstad',per?'Per uppdrag':x.km,fardT[x.fard],'','']);
   mrows.push(['','','','','',''],['','','','','','']);
